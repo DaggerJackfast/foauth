@@ -120,8 +120,8 @@ def callback():
     uri, headers, body = client.add_token(userinfo_endpoint)
     userinfo_response = requests.get(uri, headers=headers, data=body)
 
-        # The user authenticated with Google, authorized your
-        # app, and now you've verified their email through Google!
+    # The user authenticated with Google, authorized your
+    # app, and now you've verified their email through Google!
     if userinfo_response.json().get("email_verified"):
         unique_id = userinfo_response.json()["sub"]
         users_email = userinfo_response.json()["email"]
@@ -132,7 +132,7 @@ def callback():
 
     # Create a user in your db with the information provided
     # by Google
-    user= User(
+    user = User(
         id_=unique_id, name=users_name, email=users_email, profile_pic=picture
     )
 
@@ -146,11 +146,13 @@ def callback():
     # Send user back to homepage
     return redirect(url_for("index"))
 
+
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
     return redirect(url_for("index"))
+
 
 if __name__ == "__main__":
     app.run(ssl_context="adhoc")
