@@ -3,6 +3,7 @@ import './App.css';
 import FacebookLogin from 'react-facebook-login';
 import GoogleLogin from 'react-google-login';
 
+const DEV_BACK_URL="https://localhost:5000"
 
 class App extends Component {
   render() {
@@ -54,6 +55,9 @@ class App extends Component {
             </div>
             <div className="box-item">
               Server side flow
+              <div>
+                <a href={`${DEV_BACK_URL}/api/server-flow/google-login`}>GOOGLE LOGIN</a>
+              </div>
             </div>
           </div>
         </div>

@@ -52,26 +52,19 @@ def load_user(user_id):
     return User.get(user_id)
 
 
+DEV_FRONT_URL = "https://localhost:3000"
+
+
 @app.route("/")
 def index():
-    if current_user.is_authenticated:
-        return (
-            "<p>Hello, {}! You're logged in! Email: {}</p>"
-            "<div><p>Google Profile Picture:</p>"
-            '<img src="{}" alt="Google profile pic"></img></div>'
-            '<a class="button" href="/logout">Logout</a>'.format(
-                current_user.name, current_user.email, current_user.profile_pic
-            )
-        )
-    else:
-        return '<a class="button" href="/login">Google Login</a>'
+    return redirect(DEV_FRONT_URL)
 
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
 
-@app.route("/login")
+@app.route("/api/server-flow/google-login")
 def login():
     # Find out what URL to hit for Google login
     google_provider_cfg = get_google_provider_cfg()
@@ -87,7 +80,7 @@ def login():
     return redirect(request_uri)
 
 
-@app.route("/login/callback")
+@app.route("/api/server-flow/google-login/callback")
 def callback():
     # Get authorization code Google sent back to you
     code = request.args.get("code")
@@ -147,7 +140,7 @@ def callback():
     return redirect(url_for("index"))
 
 
-@app.route("/logout")
+@app.route("/api/logout")
 @login_required
 def logout():
     logout_user()
@@ -155,4 +148,4 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.run(ssl_context="adhoc")
+    app.run(ssl_context="adhoc", debug=True)
