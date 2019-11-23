@@ -58,6 +58,9 @@ class App extends Component {
               <div>
                 <a href={`${DEV_BACK_URL}/api/server-flow/google-login`}>GOOGLE LOGIN</a>
               </div>
+              <div>
+                <a href={`${DEV_BACK_URL}/api/server-flow/facebook-login`}>FACEBOOK LOGIN</a>
+              </div>
             </div>
           </div>
         </div>

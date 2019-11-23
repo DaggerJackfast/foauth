@@ -1,9 +1,12 @@
 # OAuth 2 client setup
 import json
+import secrets
+import facebook
 import requests
 from oauthlib.oauth2 import WebApplicationClient
-from flask import redirect, url_for, Blueprint, request
-from config import GOOGLE_CLIENT_ID, GOOGLE_DISCOVERY_URL, GOOGLE_CLIENT_SECRET
+from flask import redirect, url_for, Blueprint, request, jsonify
+from config import GOOGLE_CLIENT_ID, GOOGLE_DISCOVERY_URL, GOOGLE_CLIENT_SECRET, \
+    FACEBOOK_CLIENT_ID, FACEBOOK_CLIENT_SECRET
 from flask_login import (
     LoginManager,
     current_user,
@@ -99,5 +102,55 @@ def google_callback():
     return redirect(url_for("index"))
 
 
+@server_flow.route('/facebook-login')
 def facebook_login():
-    pass
+    # TODO: save state_param to database
+    state_param = "{state=%s}" % secrets.token_urlsafe(24)
+    login_url = "https://www.facebook.com/v5.0/dialog/oauth"
+    fields = "email"
+    params = "?client_id={app_id}&redirect_uri={redirect_uri}&state={state_param}&scope={scope}".format(
+        app_id=FACEBOOK_CLIENT_ID,
+        redirect_uri="{}/callback".format(request.base_url),
+        state_param=state_param,
+        scope=fields
+    )
+    request_uri = login_url + params
+    return redirect(request_uri)
+
+
+@server_flow.route('/facebook-login/callback')
+def facebook_callback():
+    code = request.args.get("code")
+    token_url = "https://graph.facebook.com/v5.0/oauth/access_token"
+    params = "?client_id={app_id}&redirect_uri={redirect_uri}&client_secret={app_secret}&code={code}".format(
+        app_id=FACEBOOK_CLIENT_ID,
+        redirect_uri=request.base_url,
+        app_secret=FACEBOOK_CLIENT_SECRET,
+        code=code
+    )
+    request_uri = token_url + params
+    response = requests.get(request_uri)
+    data = response.json()
+    access_token = data.get('access_token')
+    graph = facebook.GraphAPI(access_token=access_token)
+    fields = ",".join([
+        'email',
+        'name',
+        'picture.type(large)',
+    ])
+    user_info = graph.get_object(
+        id="me",
+        fields=fields
+    )
+    email = user_info.get('email')
+    name = user_info.get('name')
+    user_id = user_info.get('id')
+    picture = user_info.get('picture')
+    picture_url = picture['data']['url']
+    user = User(
+        id_=user_id, name=name, email=email, profile_pic=picture_url
+    )
+    if not User.get(user_id):
+        User.create(user_id, name, email, picture_url)
+    login_user(user)
+    return redirect(url_for("index"))
