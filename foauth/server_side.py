@@ -24,7 +24,7 @@ def get_google_provider_cfg():
 
 
 @server_flow.route("/google-login")
-def login():
+def google_login():
     # Find out what URL to hit for Google login
     google_provider_cfg = get_google_provider_cfg()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
@@ -40,7 +40,7 @@ def login():
 
 
 @server_flow.route("/google-login/callback")
-def callback():
+def google_callback():
     # Get authorization code Google sent back to you
     code = request.args.get("code")
 
@@ -97,3 +97,7 @@ def callback():
 
     # Send user back to homepage
     return redirect(url_for("index"))
+
+
+def facebook_login():
+    pass
