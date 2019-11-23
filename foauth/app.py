@@ -3,7 +3,7 @@ import os
 import sqlite3
 
 # Third-party libraries
-from flask import Flask, redirect, request, url_for, Response, jsonify
+from flask import Flask, redirect, request, url_for, Response, jsonify, Blueprint
 from flask_login import (
     LoginManager,
     current_user,
@@ -64,7 +64,11 @@ def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
 
-@app.route("/api/server-flow/google-login")
+# bp = Blueprint('auth', __name__, url_prefix='/auth') # Example
+server_flow = Blueprint('server-flow', __name__, url_prefix="/api/server-flow")
+
+
+@server_flow.route("/google-login")
 def login():
     # Find out what URL to hit for Google login
     google_provider_cfg = get_google_provider_cfg()
@@ -80,7 +84,7 @@ def login():
     return redirect(request_uri)
 
 
-@app.route("/api/server-flow/google-login/callback")
+@server_flow.route("/google-login/callback")
 def callback():
     # Get authorization code Google sent back to you
     code = request.args.get("code")
@@ -146,6 +150,8 @@ def logout():
     logout_user()
     return redirect(url_for("index"))
 
+
+app.register_blueprint(server_flow)
 
 if __name__ == "__main__":
     app.run(ssl_context="adhoc", debug=True)
