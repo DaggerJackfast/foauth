@@ -3,7 +3,7 @@ import json
 import requests
 from oauthlib.oauth2 import WebApplicationClient
 from flask import redirect, url_for, Blueprint, request
-from config import GOOGLE_CLIENT_ID, GOOGLE_DISCOVERY_URL
+from config import GOOGLE_CLIENT_ID, GOOGLE_DISCOVERY_URL, GOOGLE_CLIENT_SECRET
 from flask_login import (
     LoginManager,
     current_user,
