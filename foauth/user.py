@@ -10,6 +10,14 @@ class User(UserMixin):
         self.email = email
         self.profile_pic = profile_pic
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'profile_pic': self.profile_pic
+        }
+
     @staticmethod
     def get(user_id):
         db = get_db()
