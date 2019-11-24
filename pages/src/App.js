@@ -3,15 +3,29 @@ import './App.css';
 import FacebookLogin from 'react-facebook-login';
 import GoogleLogin from 'react-google-login';
 import TwitterLogin from 'react-twitter-auth';
-const DEV_BACK_URL="https://localhost:5000"
+import axios from 'axios';
+import { DEV_BACK_URL, GOOGLE_CLIENT_ID, FACEBOOK_CLIENT_ID } from "./config";
 
 class App extends Component {
   render() {
-    const responseFacebook = (response) => {
+    const onFacebookSuccess = (response) => {
       console.log(response);
     }
-
-    const responseGoogle = (response) => {
+    const onGoogleSuccess = (response) => {
+      console.log(response);
+      // axios.post(`${DEV_BACK_URL}/api/client-flow/google-login`, response)
+      //   .then(res => {
+      //     console.log('response: ', res);
+      //     console.log('response data: ', response.data);
+      //   });
+    }
+    const onGoogleFailure = (response) => {
+      console.log(response);
+    }
+    const onTwitterFailed = (response) => {
+      console.log(response);
+    }
+    const onTwitterSuccess = (response) => {
       console.log(response);
     }
 
@@ -26,28 +40,27 @@ class App extends Component {
               Client side flow
               <div>
                 <FacebookLogin
-                  appId=""
+                  appId={FACEBOOK_CLIENT_ID}
                   fields="name,email,picture"
                   autoLoad={false}
                   redirectUri="https://localhost:3000"
-                  callback={responseFacebook}
+                  callback={onFacebookSuccess}
                 />
               </div>
               <div>
                 <GoogleLogin
-                  clientId=""
+                  clientId={GOOGLE_CLIENT_ID}
                   buttonText="LOGIN WITH GOOGLE"
-                  uxMode="redirect"
                   redirectUri="https://localhost:3000"
-                  onSuccess={responseGoogle}
-                  onFailure={responseGoogle}
+                  onSuccess={onGoogleSuccess}
+                  onFailure={onGoogleFailure}
                 />
               </div>
               <div>
                 <TwitterLogin
                   loginUrl="https://localhost:3000"
-                  onFailure={this.onFailed}
-                  onSuccess={this.onSuccess}
+                  onFailure={this.onTwitterFailed}
+                  onSuccess={this.onTwitterSuccess}
                   requestTokenUrl="https://localhost:3000"
                 />
               </div>
