@@ -16,7 +16,7 @@ from flask_login import (
 from db import init_db_command
 from user import User
 from server_side import server_flow
-
+from client_side import client_flow
 # Flask app setup
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
@@ -54,6 +54,7 @@ def logout():
 
 
 app.register_blueprint(server_flow)
+app.register_blueprint(client_flow)
 
 if __name__ == "__main__":
     ssl_context = "adhoc"
