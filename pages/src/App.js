@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import './App.css';
 import FacebookLogin from 'react-facebook-login';
 import GoogleLogin from 'react-google-login';
-
+import TwitterLogin from 'react-twitter-auth';
 const DEV_BACK_URL="https://localhost:5000"
 
 class App extends Component {
@@ -41,6 +41,14 @@ class App extends Component {
                   redirectUri="https://localhost:3000"
                   onSuccess={responseGoogle}
                   onFailure={responseGoogle}
+                />
+              </div>
+              <div>
+                <TwitterLogin
+                  loginUrl="https://localhost:3000"
+                  onFailure={this.onFailed}
+                  onSuccess={this.onSuccess}
+                  requestTokenUrl="https://localhost:3000"
                 />
               </div>
             </div>
