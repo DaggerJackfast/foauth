@@ -10,7 +10,7 @@ from flask_login import (
     login_user,
     logout_user,
 )
-
+from flask_cors import CORS
 
 # Internal imports
 from db import init_db_command
@@ -20,7 +20,8 @@ from client_side import client_flow
 # Flask app setup
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
-
+CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 # User session management setup
 # https://flask-login.readthedocs.io/en/latest
 login_manager = LoginManager()
