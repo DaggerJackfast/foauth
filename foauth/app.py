@@ -56,4 +56,10 @@ def logout():
 app.register_blueprint(server_flow)
 
 if __name__ == "__main__":
-    app.run(ssl_context="adhoc", debug=True)
+    ssl_context = "adhoc"
+    certs_dir = "../certs"
+    key_path = os.path.join(certs_dir, 'localhost-key.pem')
+    cert_path = os.path.join(certs_dir, 'localhost.pem')
+    if os.path.exists(certs_dir) and os.path.exists(key_path) and os.path.exists(cert_path):
+        ssl_context = (cert_path, key_path)
+    app.run(ssl_context=ssl_context, debug=True)

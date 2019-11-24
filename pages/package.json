@@ -12,6 +12,7 @@
   },
   "scripts": {
     "start": "HTTPS=true react-scripts start",
+    "prestart": "(cat ../certs/localhost-key.pem ../certs/localhost.pem > ./node_modules/webpack-dev-server/ssl/server.pem) || :",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
