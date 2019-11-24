@@ -10,14 +10,19 @@ class App extends Component {
   render() {
     const onFacebookSuccess = (response) => {
       console.log(response);
+      axios.post(`${DEV_BACK_URL}/api/client-flow/facebook-login`, response)
+        .then(res => {
+          console.log('response: ', res);
+          console.log('response data: ', res.data);
+        });
     }
     const onGoogleSuccess = (response) => {
-      console.log(response);
-      // axios.post(`${DEV_BACK_URL}/api/client-flow/google-login`, response)
-      //   .then(res => {
-      //     console.log('response: ', res);
-      //     console.log('response data: ', response.data);
-      //   });
+      console.log(response)
+      axios.post(`${DEV_BACK_URL}/api/client-flow/google-login`, response)
+        .then(res => {
+          console.log('response: ', res);
+          console.log('response data: ', res.data);
+        });
     }
     const onGoogleFailure = (response) => {
       console.log(response);
@@ -42,6 +47,7 @@ class App extends Component {
                 <FacebookLogin
                   appId={FACEBOOK_CLIENT_ID}
                   fields="name,email,picture"
+                  responseType="code"
                   autoLoad={false}
                   redirectUri="https://localhost:3000"
                   callback={onFacebookSuccess}
