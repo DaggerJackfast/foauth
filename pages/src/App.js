@@ -7,33 +7,37 @@ import axios from 'axios';
 import { DEV_BACK_URL, GOOGLE_CLIENT_ID, FACEBOOK_CLIENT_ID } from "./config";
 
 class App extends Component {
-  render() {
-    const onFacebookSuccess = (response) => {
-      console.log(response);
-      // axios.post(`${DEV_BACK_URL}/api/client-flow/facebook-login`, response)
-      //   .then(res => {
-      //     console.log('response: ', res);
-      //     console.log('response data: ', res.data);
-      //   });
-    }
-    const onGoogleSuccess = (response) => {
-      console.log(response)
-      axios.post(`${DEV_BACK_URL}/api/client-flow/google-login`, response)
-        .then(res => {
-          console.log('response: ', res);
-          console.log('response data: ', res.data);
-        });
-    }
-    const onGoogleFailure = (response) => {
-      console.log(response);
-    }
-    const onTwitterFailed = (response) => {
-      console.log(response);
-    }
-    const onTwitterSuccess = (response) => {
-      console.log(response);
-    }
-
+  onFacebookSuccess = (response) => {
+    console.log(response);
+    // axios.post(`${DEV_BACK_URL}/api/client-flow/facebook-login`, response)
+    //   .then(res => {
+    //     console.log('response: ', res);
+    //     console.log('response data: ', res.data);
+    //   });
+  }
+  onGoogleSuccess = (response) => {
+    console.log(response)
+    axios.post(`${DEV_BACK_URL}/api/client-flow/google-login`, response)
+      .then(res => {
+        console.log('response: ', res);
+        console.log('response data: ', res.data);
+      });
+  }
+  onGoogleFailure = (response) => {
+    console.log(response);
+  }
+  onTwitterFailure = (response) => {
+    console.log("twitter response", response);
+  }
+  onTwitterSuccess = (response) => {
+    response.json().then(user => {
+      console.log('user: ', user);
+    })
+  }
+  render() {   
+    const {onFacebookSuccess,onGoogleFailure, onGoogleSuccess, onTwitterFailure, onTwitterSuccess} = this;
+    const twitterLoginUrl = `${DEV_BACK_URL}/api/client-flow/twitter-login`;
+    const twitterLoginUrlRequest = `${twitterLoginUrl}/request`
     return (
       <div className="App">
         <h1>LOGIN WITH FACEBOOK AND GOOGLE</h1>
@@ -63,10 +67,10 @@ class App extends Component {
               </div>
               <div>
                 <TwitterLogin
-                  loginUrl="https://localhost:3000"
-                  onFailure={this.onTwitterFailed}
-                  onSuccess={this.onTwitterSuccess}
-                  requestTokenUrl="https://localhost:3000"
+                  loginUrl={twitterLoginUrl}
+                  onFailure={onTwitterFailure}
+                  onSuccess={onTwitterSuccess}
+                  requestTokenUrl={twitterLoginUrlRequest}
                 />
               </div>
             </div>
