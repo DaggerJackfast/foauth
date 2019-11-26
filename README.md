@@ -17,8 +17,8 @@ GOOGLE_CLIENT_ID=<your google application id>
 GOOGLE_CLIENT_SECRET=<your google application client secret>
 FACEBOOK_CLIENT_ID=<your facebook application client id>
 FACEBOOK_CLIENT_SECRET=<your facebook application client secret>
-TWITTER_CLIENT_SECRET=<your facebook application client secret>
-TWITTER_CLIENT_SECRET=<your facebook application client secret>
+TWITTER_CLIENT_ID=<your twitter application client secret>
+TWITTER_CLIENT_SECRET=<your twitter application client secret>
 DEV_BACK_URL=<your development backend url>
 DEV_FRONT_URL=<your development frontend url>
 ```
