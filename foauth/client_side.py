@@ -101,7 +101,7 @@ def twitter_login():
         resource_owner_secret=secret
         )
     url_user = 'https://api.twitter.com/1.1/account/verify_credentials.json'
-    params = {'include_email': 'true'}
+    params = {'include_email': 'true', 'skip_status': 'true'}
     user_data = user_data_session.get(url_user, params=params)
     user_info = user_data.json()
     user_name = user_info.get('name')
