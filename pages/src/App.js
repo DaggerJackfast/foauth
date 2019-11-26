@@ -91,6 +91,9 @@ class App extends Component {
               <div>
                 <a href={`${DEV_BACK_URL}/api/server-flow/facebook-login`}>FACEBOOK LOGIN</a>
               </div>
+              <div>
+                <a href={`${DEV_BACK_URL}/api/server-flow/twitter-login`}>TWITTER LOGIN</a>
+              </div>
             </div>
           </div>
         </div>

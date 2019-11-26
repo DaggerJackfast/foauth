@@ -3,10 +3,13 @@ import json
 import secrets
 import facebook
 import requests
+from urllib import parse
+#TODO: usage only one library for oauth
 from oauthlib.oauth2 import WebApplicationClient
-from flask import redirect, url_for, Blueprint, request, jsonify
+from requests_oauthlib import OAuth1Session
+from flask import redirect, url_for, Blueprint, request, jsonify, session
 from config import GOOGLE_CLIENT_ID, GOOGLE_DISCOVERY_URL, GOOGLE_CLIENT_SECRET, \
-    FACEBOOK_CLIENT_ID, FACEBOOK_CLIENT_SECRET
+    FACEBOOK_CLIENT_ID, FACEBOOK_CLIENT_SECRET, TWITTER_CLIENT_ID, TWITTER_CLIENT_SECRET
 from flask_login import (
     LoginManager,
     current_user,
@@ -154,3 +157,58 @@ def facebook_callback():
         User.create(user_id, name, email, picture_url)
     login_user(user)
     return redirect(url_for("index"))
+
+
+@server_flow.route('/twitter-login')
+def twitter_login():
+    request_token_url = "https://api.twitter.com/oauth/request_token"
+    request_session = OAuth1Session(client_key=TWITTER_CLIENT_ID, client_secret=TWITTER_CLIENT_SECRET)
+    callback_url = '{}/callback'.format(request.base_url)
+    params = {'oauth_callback': callback_url}
+    data = request_session.get(request_token_url, params=params)
+    parsed_data = parse.parse_qsl(data.text)
+    token_body = {key: value for key, value in parsed_data}
+    token = token_body['oauth_token']
+    authorize_url = 'https://api.twitter.com/oauth/authorize'
+    # TODO: usage urllib.parse.urlencode
+    return redirect('{url}?oauth_callback={callback_url}&oauth_token={oauth_token}'.format(
+        url=authorize_url,
+        callback_url=callback_url,
+        oauth_token=token
+        ))
+
+
+@server_flow.route('/twitter-login/callback')
+def twitter_login_callback():
+    if 'oauth_verifier' not in request.args:
+        return "Not exists verifier.", 400
+    url = 'https://api.twitter.com/oauth/access_token'
+    auth_session = OAuth1Session(client_key=TWITTER_CLIENT_ID, client_secret=TWITTER_CLIENT_SECRET)
+    request_data = dict(request.args)
+    access_token_data = auth_session.post(url, request_data)
+    parsed_data = parse.parse_qsl(access_token_data.text)
+    access_token_body = {key: value for key, value in parsed_data}
+    key = access_token_body.get('oauth_token')
+    secret = access_token_body.get('oauth_token_secret')
+    user_data_session = OAuth1Session(
+        client_key=TWITTER_CLIENT_ID,
+        client_secret=TWITTER_CLIENT_SECRET,
+        resource_owner_key=key,
+        resource_owner_secret=secret
+    )
+    url_user = 'https://api.twitter.com/1.1/account/verify_credentials.json'
+    params = {'include_email': 'true', 'skip_status': 'true'}
+    user_data = user_data_session.get(url_user, params=params)
+    user_info = user_data.json()
+    user_name = user_info.get('name')
+    user_email = user_info.get('email')
+    user_picture = user_info.get('profile_image_url_https')
+    user_id = user_info.get('id')
+    user_email = user_email+'_twitter'
+    user = User(
+        id_=user_id, name=user_name, email=user_email, profile_pic=user_picture
+    )
+    if not User.get(user_id):
+        User.create(user_id, user_name, user_email, user_picture)
+    login_user(user)
+    return jsonify(user.to_dict())
