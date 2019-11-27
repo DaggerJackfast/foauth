@@ -1,12 +1,8 @@
-# OAuth 2 client setup
-import json
 import secrets
 import facebook
 import requests
 from urllib import parse
-#TODO: usage only one library for oauth
-from oauthlib.oauth2 import WebApplicationClient
-from requests_oauthlib import OAuth1Session
+from requests_oauthlib import OAuth1Session, OAuth2Session
 from flask import redirect, url_for, Blueprint, request, jsonify, session
 from config import GOOGLE_CLIENT_ID, GOOGLE_DISCOVERY_URL, GOOGLE_CLIENT_SECRET, \
     FACEBOOK_CLIENT_ID, FACEBOOK_CLIENT_SECRET, TWITTER_CLIENT_ID, TWITTER_CLIENT_SECRET
@@ -20,66 +16,58 @@ from flask_login import (
 from user import User
 
 
-client = WebApplicationClient(GOOGLE_CLIENT_ID)
-
 server_flow = Blueprint('server-flow', __name__, url_prefix="/api/server-flow")
 
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
-
+# TODO: usage one session or service, delete dublicate code
 @server_flow.route("/google-login")
 def google_login():
-    # Find out what URL to hit for Google login
     google_provider_cfg = get_google_provider_cfg()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+    scope = [
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile"
+    ]
 
-    # Use library to construct the request for Google login and provide
-    # scopes that let you retrieve user's profile from Google
-    request_uri = client.prepare_request_uri(
-        authorization_endpoint,
+    auth_session = OAuth2Session(
+        client_id=GOOGLE_CLIENT_ID,
+        scope=scope,
         redirect_uri=request.base_url + "/callback",
-        scope=["openid", "email", "profile"],
     )
-    return redirect(request_uri)
+    authorization_uri, state = auth_session.authorization_url(
+        authorization_endpoint,
+        access_type="offline",
+        prompt="select_account"
+    )
+    return redirect(authorization_uri)
 
 
 @server_flow.route("/google-login/callback")
 def google_callback():
-    # Get authorization code Google sent back to you
-    code = request.args.get("code")
-
-    # things on behalf of a user
+    code_response = request.url
     google_provider_cfg = get_google_provider_cfg()
     token_endpoint = google_provider_cfg["token_endpoint"]
-
-    # Prepare and send a request to get tokens! Yay tokens!
-    token_url, headers, body = client.prepare_token_request(
-        token_endpoint,
-        authorization_response=request.url,
-        redirect_url=request.base_url,
-        code=code
+    scope = [
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "openid"
+    ]
+    auth_session = OAuth2Session(
+        GOOGLE_CLIENT_ID,
+        scope=scope,
+        redirect_uri=request.base_url
     )
-    token_response = requests.post(
-        token_url,
-        headers=headers,
-        data=body,
-        auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+    auth_session.fetch_token(
+        token_url=token_endpoint,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        authorization_response=code_response
     )
-
-    # Parse the tokens!
-    client.parse_request_body_response(json.dumps(token_response.json()))
-
-    # Now that you have tokens (yay) let's find and hit the URL
-    # from Google that gives you the user's profile information,
-    # including their Google profile image and email
     userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
-    uri, headers, body = client.add_token(userinfo_endpoint)
-    userinfo_response = requests.get(uri, headers=headers, data=body)
+    userinfo_response = auth_session.get(userinfo_endpoint)
 
-    # The user authenticated with Google, authorized your
-    # app, and now you've verified their email through Google!
     if userinfo_response.json().get("email_verified"):
         unique_id = userinfo_response.json()["sub"]
         users_email = userinfo_response.json()["email"]
@@ -88,17 +76,13 @@ def google_callback():
     else:
         return "User email not available or not verified by Google.", 400
 
-    # Create a user in your db with the information provided
-    # by Google
     user = User(
         id_=unique_id, name=users_name, email=users_email, profile_pic=picture
     )
 
-    # Doesn't exist? Add it to the database.
     if not User.get(unique_id):
         User.create(unique_id, users_name, users_email, picture)
 
-    # Begin user session by logging the user in
     login_user(user)
 
     # Send user back to homepage
@@ -125,6 +109,7 @@ def facebook_login():
 def facebook_callback():
     code = request.args.get("code")
     token_url = "https://graph.facebook.com/v5.0/oauth/access_token"
+    # TODO: usage urllib.parse.urlencode unstead string formatting
     params = "?client_id={app_id}&redirect_uri={redirect_uri}&client_secret={app_secret}&code={code}".format(
         app_id=FACEBOOK_CLIENT_ID,
         redirect_uri=request.base_url,
@@ -175,7 +160,7 @@ def twitter_login():
         url=authorize_url,
         callback_url=callback_url,
         oauth_token=token
-        ))
+    ))
 
 
 @server_flow.route('/twitter-login/callback')
