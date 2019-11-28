@@ -1,4 +1,5 @@
 import secrets
+# TODO: usage aouthlib unstead facebook-sdk for usage only one lib
 import facebook
 import requests
 from urllib import parse
@@ -25,6 +26,8 @@ def get_google_provider_cfg():
 # TODO: usage one session or service, delete dublicate code
 @server_flow.route("/google-login")
 def google_login():
+    state = "%s" % secrets.token_urlsafe(24)
+    session["google_state_param"] = state
     google_provider_cfg = get_google_provider_cfg()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
     scope = [
@@ -40,13 +43,18 @@ def google_login():
     authorization_uri, state = auth_session.authorization_url(
         authorization_endpoint,
         access_type="offline",
-        prompt="select_account"
+        prompt="select_account",
+        state=state
     )
     return redirect(authorization_uri)
 
 
 @server_flow.route("/google-login/callback")
 def google_callback():
+    state = request.args.get('state')
+    session_state = session.pop('google_state_param')
+    if state != session_state:
+        return "The state parameter is invalid", 400
     code_response = request.url
     google_provider_cfg = get_google_provider_cfg()
     token_endpoint = google_provider_cfg["token_endpoint"]
@@ -85,38 +93,41 @@ def google_callback():
 
     login_user(user)
 
-    # Send user back to homepage
     return redirect(url_for("index"))
 
 
 @server_flow.route('/facebook-login')
 def facebook_login():
-    # TODO: save state_param to database
     state_param = "{state=%s}" % secrets.token_urlsafe(24)
     login_url = "https://www.facebook.com/v5.0/dialog/oauth"
     fields = "email"
-    params = "?client_id={app_id}&redirect_uri={redirect_uri}&state={state_param}&scope={scope}".format(
-        app_id=FACEBOOK_CLIENT_ID,
-        redirect_uri="{}/callback".format(request.base_url),
-        state_param=state_param,
-        scope=fields
-    )
-    request_uri = login_url + params
+    params = parse.urlencode({
+        'client_id': FACEBOOK_CLIENT_ID,
+        'redirect_uri': f'{request.base_url}/callback',
+        'state': state_param,
+        'scope': fields
+    })
+    session['facebook_state_param'] = state_param
+    request_uri = f'{login_url}?{params}'
     return redirect(request_uri)
 
 
 @server_flow.route('/facebook-login/callback')
 def facebook_callback():
     code = request.args.get("code")
+    state_param = request.args.get("state")
+    session_state_param = session.pop("facebook_state_param")
+    if state_param != session_state_param:
+        return "The state parameter is invalid", 400
+
     token_url = "https://graph.facebook.com/v5.0/oauth/access_token"
-    # TODO: usage urllib.parse.urlencode unstead string formatting
-    params = "?client_id={app_id}&redirect_uri={redirect_uri}&client_secret={app_secret}&code={code}".format(
-        app_id=FACEBOOK_CLIENT_ID,
-        redirect_uri=request.base_url,
-        app_secret=FACEBOOK_CLIENT_SECRET,
-        code=code
-    )
-    request_uri = token_url + params
+    params = parse.urlencode({
+        'client_id': FACEBOOK_CLIENT_ID,
+        'redirect_uri': request.base_url,
+        'client_secret': FACEBOOK_CLIENT_SECRET,
+        'code': code
+    })
+    request_uri = f'{token_url}?{params}'
     response = requests.get(request_uri)
     data = response.json()
     access_token = data.get('access_token')
@@ -155,12 +166,12 @@ def twitter_login():
     token_body = {key: value for key, value in parsed_data}
     token = token_body['oauth_token']
     authorize_url = 'https://api.twitter.com/oauth/authorize'
-    # TODO: usage urllib.parse.urlencode
-    return redirect('{url}?oauth_callback={callback_url}&oauth_token={oauth_token}'.format(
-        url=authorize_url,
-        callback_url=callback_url,
-        oauth_token=token
-    ))
+    params = {
+        'oauth_callback': callback_url,
+        'oauth_token': token,
+    }
+    auth_url = f'{authorize_url}?{parse.urlencode(params)}'
+    return redirect(auth_url)
 
 
 @server_flow.route('/twitter-login/callback')
